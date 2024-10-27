@@ -6,18 +6,16 @@ import os
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from tensorflow.keras import models, layers # type: ignore
+from tensorflow.keras import models, layers
 import matplotlib.pyplot as plt
-import seaborn as sns  # Import seaborn for confusion matrix plotting
-from sklearn import svm
+import seaborn as sns
 from sklearn.metrics import accuracy_score, confusion_matrix
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.neighbors import KNeighborsClassifier
 
-# Optional: Suppress TensorFlow oneDNN warnings
-import os
+# Suppress TensorFlow oneDNN warnings and configure for CPU
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 # Constants
 IMAGE_SIZE = 256
@@ -26,13 +24,12 @@ EPOCHS = 5
 CHANNELS = 3
 CLASS_NAMES = ['Potato___Early_blight', 'Potato___healthy', 'Potato___Late_blight']
 
-# Load dataset
+# Load dataset (update path for Render.com compatibility)
 data_set = tf.keras.preprocessing.image_dataset_from_directory(
-    r"D:\Potato Sentinel\PlantVillage",
+    "PlantVillage",  # Use relative path or environment variable if needed
     shuffle=True,
     image_size=(IMAGE_SIZE, IMAGE_SIZE),
     batch_size=BATCH_SIZE,
-    class_names=CLASS_NAMES,
     label_mode='int'
 )
 
@@ -44,7 +41,6 @@ for image_batch, label_batch in data_set.take(1):
         plt.imshow(image_batch[i].numpy().astype('uint8'))
         plt.title(CLASS_NAMES[label_batch[i]])
         plt.axis("off")
-#plt.show()
 
 # Partition the dataset
 def get_dataset_partition(ds, train_split=0.8, test_split=0.1, val_split=0.1, shuffle=True, shuffle_size=10000):
@@ -61,7 +57,7 @@ def get_dataset_partition(ds, train_split=0.8, test_split=0.1, val_split=0.1, sh
 
 train_ds, test_ds, val_ds = get_dataset_partition(data_set)
 
-# Data preprocessing and augmentation with Normalization, Random Cropping, Random Contrast, and Random Brightness
+# Data preprocessing and augmentation
 preprocess_and_augment = tf.keras.Sequential([
     layers.Resizing(IMAGE_SIZE, IMAGE_SIZE),
     layers.Rescaling(1.0 / 255),
@@ -157,41 +153,7 @@ def predict_ensemble(model, rf_model, image):
     predicted_class = CLASS_NAMES[rf_predictions[0]]
     return predicted_class
 
-# Display predictions
-plt.figure(figsize=(15, 15))
-for images, labels in test_ds.take(1):
-    for i in range(9):
-        ax = plt.subplot(3, 3, i + 1)
-        plt.imshow(images[i].numpy().astype('uint8'))
-        predicted_class = predict_ensemble(ensemble_model, rf_model, images[i].numpy())
-        actual_class = CLASS_NAMES[labels[i]]
-        plt.title(f'Actual: {actual_class}\nPredicted: {predicted_class}')
-        plt.axis('off')
-plt.show()
-
-# Generate and plot confusion matrix
-cm = confusion_matrix(test_labels, rf_predictions)
-plt.figure(figsize=(10, 8))
-sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=CLASS_NAMES, yticklabels=CLASS_NAMES)
-plt.xlabel('Predicted')
-plt.ylabel('Actual')
-plt.title('Confusion Matrix')
-plt.show()
-
-# Print the confusion matrix
-print("Confusion Matrix:")
-print(cm)
-
-print("\nConfusion Matrix with Labels:")
-labels = CLASS_NAMES
-for i, label in enumerate(labels):
-    print(f"{label}: {cm[i]}")
-
-# Calculate and print accuracy
-accuracy = np.trace(cm) / np.sum(cm)
-print(f"Accuracy: {accuracy:.2f}")
-
-# Save the models
-ensemble_model.save('ensemble_model.keras')  # Use the newer format
+# Save models in TensorFlow SavedModel format for compatibility
+ensemble_model.save('ensemble_model', save_format='tf')  # TensorFlow SavedModel format
 joblib.dump(rf_model, 'rf_model.pkl')
 joblib.dump(scaler, 'scaler.pkl')
