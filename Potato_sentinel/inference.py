@@ -1,11 +1,19 @@
+import os
 import tensorflow as tf
 import joblib
 import numpy as np
 
-# Load the models and scaler
-ensemble_model = tf.keras.models.load_model(r'D:\Potato Sentinel\ensemble_model.keras')
-rf_model = joblib.load('rf_model.pkl')
-scaler = joblib.load('scaler.pkl')
+# Load the models and scaler using relative paths
+# Use os.path.join to create the path based on the current file's directory
+current_dir = os.path.dirname(__file__)
+
+# Update the path to ensemble_model.keras
+ensemble_model_path = os.path.join(current_dir, 'ensemble_model.keras')
+ensemble_model = tf.keras.models.load_model(ensemble_model_path)
+
+# Load the scaler and random forest model, assuming they are in the same directory
+rf_model = joblib.load(os.path.join(current_dir, 'rf_model.pkl'))
+scaler = joblib.load(os.path.join(current_dir, 'scaler.pkl'))
 
 CLASS_NAMES = ['Potato___Early_blight', 'Potato___healthy', 'Potato___Late_blight']
 
