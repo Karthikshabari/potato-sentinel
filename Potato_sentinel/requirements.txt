@@ -1,11 +1,9 @@
-Flask==2.2.2
 tensorflow==2.16.1
-joblib==1.2.0
-numpy==1.23.5
-pandas==1.5.2
-matplotlib==3.6.0
-seaborn==0.12.1
-werkzeug==2.2.2
-scikit-learn==1.2.0
-gunicorn
-Flask
+joblib
+Flask  # If you are using Flask for your web app
+gunicorn  # For running your Flask app in production
+numpy
+pandas
+scikit-learn
+matplotlib
+seaborn
